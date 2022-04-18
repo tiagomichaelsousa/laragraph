@@ -17,6 +17,9 @@ type Query {
       "Filters by name. Accepts SQL LIKE wildcards `%` and `_`."
       name: String @where(operator: "like")
     ): [User!]! @paginate(defaultCount: 10)
+
+    "Get the current user."
+     me: User @auth
 }
 
 "Account of a person who utilizes this application."
@@ -38,6 +41,9 @@ type User {
 
     "When the account was last updated."
     updated_at: DateTime!
+
+    "The articles that the user created"
+    articles: [Article!]! @hasMany
 }
 
 type AccessToken {
@@ -53,6 +59,4 @@ extend type Mutation {
   login(input: LoginInput @spread): AccessToken! @field(resolver: "App\\GraphQL\\Mutations\\AuthMutation@login")
 }
 
-type Query {
-    me: User @auth
-}
+#import articles.graphql

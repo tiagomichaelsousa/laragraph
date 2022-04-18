@@ -1,0 +1,59 @@
+type Article {
+    "Unique primary key."
+    id: ID!
+
+    "Unique slug address."
+    slug: String!
+
+    "Non-unique title."
+    title: String!
+
+    "Non-unique body."
+    body: String!
+
+    "The guardor of the article"
+    user: User! @belongsTo
+
+    "When the article was created."
+    created_at: DateTime!
+
+    "When the article was last updated."
+    updated_at: DateTime!
+}
+
+input CreateArticleInput @validator {
+    slug: String!
+    title: String!
+    body: String!
+}
+
+input UpdateArticleInput @validator {
+    id: ID!
+    slug: String
+    title: String
+    body: String
+}
+
+extend type Query {
+    "List multiple articles."
+    articles(
+        "Filters by name. Accepts SQL LIKE wildcards `%` and `_`."
+        name: String @where(operator: "like")
+    ): [Article!]! @paginate(defaultCount: 10)
+}
+
+extend type Mutation {
+    createArticle(input: CreateArticleInput @spread): Article!
+        @guard
+        @field(resolver: "App\\GraphQL\\Mutations\\ArticleMutation@store")
+
+    updateArticle(input: UpdateArticleInput @spread): Article!
+        @guard
+        @can(ability: "update", model: "App\\Models\\Article", find: "id")
+        @field(resolver: "App\\GraphQL\\Mutations\\ArticleMutation@update")
+
+    deleteArticle(id: ID!): Article!
+        @guard
+        @can(ability: "delete", model: "App\\Models\\Article", find: "id")
+        @field(resolver: "App\\GraphQL\\Mutations\\ArticleMutation@destroy")
+}
