@@ -32,7 +32,7 @@ it('allows a user to login successfully', function () {
 });
 
 it('throws an error when credentials are invalid', function () {
-    $res = $this->graphQL(
+    $this->graphQL(
         /** @lang GraphQL */
         '
             mutation {
@@ -137,7 +137,7 @@ it('throws an error when password is wrong', function () {
 it('retrieves logged in user information', function () {
     $user = Sanctum::actingAs(User::factory()->create());
 
-    $res = $this->graphQL(
+    $this->graphQL(
         /** @lang GraphQL */
         '
         {
