@@ -3,6 +3,8 @@
 namespace App\GraphQL\Mutations;
 
 use App\Models\Article;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Storage;
 
 class ArticleMutation
 {
@@ -12,7 +14,15 @@ class ArticleMutation
      */
     public function store($_, array $request)
     {
-        return request()->user()->articles()->create($request);
+        $user = request()->user();
+
+        /** @var \Illuminate\Http\UploadedFile $file */
+        $file = Arr::has($request, 'thumbnail') ? Storage::putFile("{$user->id}/blog", $request['thumbnail']) : null;
+
+        return $user->articles()->create([
+            ...$request, 
+            'thumbnail' => $file
+        ]);
     }
 
     /**

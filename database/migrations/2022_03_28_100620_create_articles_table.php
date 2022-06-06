@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('slug')->unique();
             $table->string('title');
             $table->text('body');
+            $table->string('thumbnail')->nullable();
             $table->timestamps();
 
             $table->foreignIdFor(User::class)

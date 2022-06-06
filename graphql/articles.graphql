@@ -10,6 +10,9 @@ type Article {
 
     "Non-unique body."
     body: String!
+    
+    "Thumbnail path"
+    thumbnail: String
 
     "The guardor of the article"
     user: User! @belongsTo
@@ -25,6 +28,7 @@ input CreateArticleInput @validator {
     slug: String!
     title: String!
     body: String!
+    thumbnail: Upload
 }
 
 input UpdateArticleInput @validator {
