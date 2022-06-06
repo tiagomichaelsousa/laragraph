@@ -2,10 +2,12 @@
 
 use App\Models\Article;
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
+use Illuminate\Support\Str;
 
-
-it('can create an article', function () {
+it('can create an article without thumbnail', function () {
     Sanctum::actingAs(User::factory()->create());
     $article = Article::factory()->make();
 
@@ -18,12 +20,14 @@ it('can create an article', function () {
             createArticle(input: { slug: $slug, title: $title, body: $body }) {
                 title
                 slug
+                thumbnail
             }
         }',
         [
             'slug' => $article->slug,
             'title' => $article->title,
             'body' => $article->body,
+            'thumbnail' => Article::DEFAULT_THUMBNAIL_PATH
         ]
     )->assertJson([
         'data' => [
@@ -37,7 +41,56 @@ it('can create an article', function () {
     $this->assertDatabaseHas('articles', [
         'title' => $article->title,
     ]);
-})->only();
+});
+
+it('can create an article', function () {
+    Storage::fake('s3');
+    Sanctum::actingAs(User::factory()->create());
+    $article = Article::factory()->make();
+
+    $this->assertDatabaseCount('articles', 0);
+
+    $operations = [
+        'query' => /** @lang GraphQL */ '
+            mutation ($slug: String!, $title: String!, $body: String!, $thumbnail: Upload) {
+                createArticle(input: { slug: $slug, title: $title, body: $body, thumbnail: $thumbnail }) {
+                    title
+                    slug
+                    thumbnail
+                }
+            }
+        ',
+        'variables' => [
+            'slug' => $article->slug,
+            'title' => $article->title,
+            'body' => $article->body,
+            'thumbnail' => null,
+        ],
+    ];
+
+    $map = [
+        '0' => ['variables.thumbnail'],
+    ];
+
+    $file = UploadedFile::fake()->image('avatar.jpg');
+
+    $response = $this->multipartGraphQL($operations, $map, [
+        '0' => $file,
+    ])->assertJson([
+        'data' => [
+            'createArticle' => [
+                'title' => $article->title,
+                'slug' => $article->slug,
+            ],
+        ],
+    ]);
+
+    Storage::assertExists(Str::remove('/storage/',  $response['data']['createArticle']['thumbnail']));
+
+    $this->assertDatabaseHas('articles', [
+        'title' => $article->title,
+    ]);
+});
 
 it('cannot create an article if not authenticated', function () {
     $article = Article::factory()->make();
